@@ -1,6 +1,23 @@
+# Core server
 fastapi
 uvicorn[standard]
 python-jose[cryptography]
 python-dotenv
 pydantic
 websockets
+
+# Safety map & route engine (imported via safety_api.py)
+geopandas
+shapely
+joblib
+geopy
+h3
+pandas
+openpyxl
+requests
+scikit-learn
+
+# Testing
+pytest
+pytest-asyncio
+httpx

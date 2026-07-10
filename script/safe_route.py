@@ -174,21 +174,25 @@ def score_route_by_hex_risk(route_coords, time_bucket, static_scores, hex_time_r
     cost = compute_route_cost(mean_risk, max_risk, unsafe_count)
     return cost, mean_risk, max_risk, unsafe_count, hex_risk_list
 
-def safest_route(start_address, end_address, time_bucket=None):
+def safest_route(start_address, end_address, time_bucket=None, data_dir='data'):
     if not time_bucket:
         hour = datetime.now().hour
         if TIME_BUCKETS['day'][0] <= hour < TIME_BUCKETS['day'][1]: time_bucket = 'day'
         elif TIME_BUCKETS['evening'][0] <= hour < TIME_BUCKETS['evening'][1]: time_bucket = 'evening'
         else: time_bucket = 'night'
             
-    crime_df = pd.read_excel('data/crime.xlsx')
-    if os.path.exists('data/hex_time_risk.csv'):
-        risk_df = pd.read_csv('data/hex_time_risk.csv')
+    crime_path = os.path.join(data_dir, 'crime.xlsx')
+    hex_risk_path = os.path.join(data_dir, 'hex_time_risk.csv')
+    ml_dataset_path = os.path.join(data_dir, 'mumbai_ml_dataset.geojson')
+
+    crime_df = pd.read_excel(crime_path)
+    if os.path.exists(hex_risk_path):
+        risk_df = pd.read_csv(hex_risk_path)
     else:
-        risk_df = build_hex_time_risk(crime_df)
-        
+        risk_df = build_hex_time_risk(crime_df, output_path=hex_risk_path)
+
     hex_time_risk_dict = risk_df.set_index('hex_id').to_dict(orient='index')
-    static_scores = load_static_scores()
+    static_scores = load_static_scores(geojson_path=ml_dataset_path)
     
     geolocator = Nominatim(user_agent="girlthon_safe_router", timeout=10)
     def geocode_with_retry(addr):
