@@ -1,55 +1,30 @@
-# Mumbai Women's Safety Score Prediction
+# 🛡️ SafeSphere v2 — Women's Safety Platform
 
-## Overview
-
-This project is being developed for a hackathon to build a **geospatial machine learning pipeline** that predicts a **Women's Safety Score (0–100)** for different regions of Mumbai.
-
-The city is divided into **H3 hexagons (resolution 8)**. Each hexagon contains engineered geospatial features extracted from OpenStreetMap and crime data. A Random Forest regression model is trained on a synthetic safety score generated from these features.
-
-> **Note:** The safety score is **synthetically generated** for demonstration purposes and is **not an official measure of women's safety**.
+> A real-time emergency SOS voice relay system combined with a geospatial ML-powered Women's Safety Score for Mumbai — built for a hackathon.
 
 ---
 
-# Project Pipeline
+## 📌 What This Project Does
 
-```
-Mumbai Boundary
-        │
-        ▼
-Generate H3 Hexagons
-        │
-        ▼
-Download OpenStreetMap Data
-        │
-        ▼
-Feature Engineering
-        │
-        ▼
-Generate Synthetic Safety Score
-        │
-        ▼
-Train Random Forest Model
-        │
-        ▼
-Predict Safety Score
-        │
-        ▼
-Interactive Map / Application
-```
+SafeSphere v2 has two integrated layers:
+
+| Layer | Description |
+|-------|-------------|
+| **ML Safety Map** | Predicts a Women's Safety Score (0–100) for any location in Mumbai using a Random Forest model trained on H3 hexagonal geospatial data |
+| **Voice SOS Backend** | Real-time emergency system where a victim triggers an SOS, streams live audio to emergency contacts via WebSocket, and shares their phone number and GPS location with responders |
+| **Mobile App Simulator** | A browser-based side-by-side phone simulator showing the full victim ↔ responder flow |
 
 ---
 
-# Project Structure
+## 🗂️ Project Structure
 
 ```
-girlthon/
-
-├── data/
-│   ├── gadm41_IND.gpkg
+SafeSphere-v2v/
+│
+├── data/                          # Geospatial datasets
 │   ├── mumbai_boundary.geojson
 │   ├── mumbai_hexagons.geojson
-│   ├── mumbai_features.geojson
-│   ├── mumbai_ml_dataset.geojson
+│   ├── mumbai_ml_dataset.geojson  # Main ML dataset (719 hexagons)
 │   ├── crime.xlsx
 │   ├── police.geojson
 │   ├── hospitals.geojson
@@ -61,7 +36,7 @@ girlthon/
 │   ├── schools.geojson
 │   └── pharmacies.geojson
 │
-├── script/
+├── script/                        # ML pipeline scripts
 │   ├── create_boundary.py
 │   ├── generate_hexagons.py
 │   ├── download_osm.py
@@ -70,352 +45,242 @@ girlthon/
 │   ├── run_features.py
 │   ├── generate_scores.py
 │   ├── train_model.py
-│   └── app.py
+│   └── safe_route.py              # Safest route calculation engine
 │
-├── model.pkl
+├── model.pkl                      # Trained RandomForest model (R² ≈ 0.88)
 ├── requirements.txt
-└── README.md
+│
+└── voice-feature/                 # FastAPI backend + Mobile UI
+    ├── app/
+    │   ├── main.py                # FastAPI entry point
+    │   ├── models.py              # Pydantic models (SOSRequest, SOSResponse, etc.)
+    │   ├── session_manager.py     # In-memory session store
+    │   ├── websocket.py           # WS broadcaster + listener logic
+    │   ├── safety_api.py          # Safety score + route REST endpoints
+    │   ├── auth.py                # JWT token creation/validation
+    │   ├── cleanup.py             # Session TTL cleanup loop
+    │   ├── config.py              # App configuration
+    │   ├── logger.py              # Structured logger
+    │   └── static/
+    │       └── index.html         # Mobile App Simulator UI
+    ├── test/                      # API + WebSocket integration tests
+    └── requirements.txt
 ```
 
 ---
 
-# Completed Work
+## ⚡ Quick Start — Run the App
 
-## 1. Mumbai Boundary Generation
-
-Generated the Mumbai city boundary by merging:
-
-- Mumbai City
-- Mumbai Suburban
-
-Output:
-
-```
-data/mumbai_boundary.geojson
-```
-
----
-
-## 2. H3 Hexagon Generation
-
-Generated H3 hexagons covering Mumbai.
-
-- Resolution: **8**
-- Total Hexagons: **719**
-
-Output:
-
-```
-data/mumbai_hexagons.geojson
-```
-
-Each hexagon contains:
-
-- hex_id
-- geometry
-
----
-
-## 3. OpenStreetMap Data Collection
-
-Reusable downloader implemented.
-
-Downloaded:
-
-- Police Stations
-- Hospitals
-- Railway Stations
-- Metro Stations
-- Bus Stops
-- Restaurants
-- Parks
-- Schools
-- Pharmacies
-
-Outputs are stored inside the **data/** folder.
-
----
-
-## 4. Feature Engineering
-
-Feature engineering is reusable through:
-
-```
-script/add_feature.py
-```
-
-Current engineered features include:
-
-### Distance Features
-
-Nearest distance from each hexagon centroid to:
-
-- police station
-- hospital
-- railway station
-- metro station
-- bus stop
-
-Generated columns:
-
-```
-police_distance
-hospital_distance
-railway_distance
-metro_distance
-bus_stop_distance
-```
-
----
-
-### Count Features
-
-Counts features located inside each H3 hexagon.
-
-Generated columns:
-
-```
-restaurants
-parks
-schools
-pharmacies
-```
-
----
-
-### Crime Feature
-
-Crime locations are loaded from:
-
-```
-crime.xlsx
-```
-
-Crime incidents are spatially joined with H3 hexagons.
-
-Generated column:
-
-```
-crime_count
-```
-
----
-
-## 5. Synthetic Safety Score
-
-Synthetic target variable generated using:
-
-```
-score = 100
-
-- crime penalty
-- distance penalties
-
-+ park bonus
-+ school bonus
-+ pharmacy bonus
-+ restaurant bonus
-
-clip(score, 0, 100)
-```
-
-Output:
-
-```
-data/mumbai_ml_dataset.geojson
-```
-
-Target column:
-
-```
-safety_score
-```
-
----
-
-## 6. Machine Learning
-
-Model:
-
-```
-RandomForestRegressor
-```
-
-Features:
-
-- police_distance
-- hospital_distance
-- railway_distance
-- metro_distance
-- bus_stop_distance
-- restaurants
-- parks
-- schools
-- pharmacies
-- crime_count
-
-Target:
-
-```
-safety_score
-```
-
-Outputs:
-
-```
-model.pkl
-```
-
-Current evaluation:
-
-- Train/Test Split: 80/20
-- R² ≈ 0.88
-
----
-
-# Current Dataset
-
-Each H3 hexagon contains:
-
-```
-hex_id
-
-police_distance
-hospital_distance
-railway_distance
-metro_distance
-bus_stop_distance
-
-restaurants
-parks
-schools
-pharmacies
-
-crime_count
-
-safety_score
-
-geometry
-```
-
----
-
-# Remaining Tasks
-
-## 1. Prediction Pipeline
-
-Implement terminal-based prediction.
-
-Flow:
-
-```
-User enters location
-        │
-        ▼
-Geocode location
-        │
-        ▼
-Find corresponding H3 hexagon
-        │
-        ▼
-Load engineered features
-        │
-        ▼
-Predict using model.pkl
-        │
-        ▼
-Display Women's Safety Score
-```
-
----
-
-## 2. User Interface
-
-Build an interactive interface using:
-
-- Streamlit
-or
-- Folium
-
-Display:
-
-- Color-coded H3 hexagons
-- Safety Score
-- Crime Count
-- Nearby infrastructure
-- Search by location
-
----
-
-## Team Notes
-
-- Feature engineering is centralized in `add_feature.py`.
-- `run_features.py` calls the reusable feature engineering functions.
-- Avoid creating separate scripts for every feature.
-- The project follows a modular pipeline where each script performs one stage of the workflow.
-
----
-
-## How to Run
-
-### Install dependencies
+### 1. Install dependencies
 
 ```bash
+# From the voice-feature directory
+cd voice-feature
 pip install -r requirements.txt
 ```
 
-### Generate boundary
+### 2. Start the server
 
 ```bash
-python script/create_boundary.py
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Generate hexagons
+### 3. Open the Mobile Simulator
 
-```bash
-python script/generate_hexagons.py
+```
+http://127.0.0.1:8000/ui
 ```
 
-### Download OpenStreetMap data
+> The API docs (Swagger UI) are available at: `http://127.0.0.1:8000/docs`
 
-```bash
-python script/download_all.py
-```
+---
 
-### Generate features
+## 📱 Mobile App Simulator
 
-```bash
-python script/run_features.py
-```
+The UI at `/ui` simulates two phones side by side in a browser:
 
-### Generate synthetic safety score
+### Phone 1 — Victim / User App
 
-```bash
-python script/generate_scores.py
-```
+| Tab | Features |
+|-----|----------|
+| 🏠 **Home** | Dashboard with recent victim records (ID, location, timestamp) — no safety scores shown |
+| 🆘 **SOS** | Large circular SOS button, phone number input, voice activation toggle (keyword: *"help"*, *"sos"*, *"emergency"*), mic visualizer, token sheet |
+| 📊 **Safety Score** | Type any location worldwide → geocodes via Nominatim → queries ML model → shows safety score gauge + crime metrics |
+| 🗺️ **Safest Route** | Enter start & end as place names → calls route engine → shows interactive Leaflet map with safe route (green) and quick route (blue dashed) |
 
-### Train model
+### Phone 2 — Responder / Emergency App
 
-```bash
-python script/train_model.py
-```
+- Paste the **listener JWT token** generated by the victim's SOS
+- Connects to the live WebSocket stream
+- Displays the **victim's phone number** prominently
+- Shows victim user ID, GPS coordinates, geocoded location pin, and alert time
+- Live audio level meter for incoming mic stream
+- **No safety score metrics** shown on the responder screen
 
-### Run application
+---
 
-```bash
-python script/app.py
+## 🔌 API Endpoints
+
+### SOS & Session
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/sos` | Trigger SOS → returns broadcaster & listener JWT tokens |
+| `GET` | `/session/{id}/status` | Live session status (listener count, phone, GPS) |
+| `DELETE` | `/session/{id}` | End a session |
+| `GET` | `/sessions` | List all active sessions (admin) |
+
+### Safety Map
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/safety/score?lat=&lng=` | Safety score for a GPS point (0–100) |
+| `POST` | `/safety/route` | Safest + quickest walking route between two Mumbai locations |
+| `GET` | `/safety/hexagons` | Full hexagon GeoJSON for map rendering |
+
+### WebSockets
+
+| Protocol | Endpoint | Description |
+|----------|----------|-------------|
+| `WS` | `/ws/broadcast?token=` | Victim streams live PCM audio |
+| `WS` | `/ws/listen?token=` | Emergency contacts receive live audio |
+
+### SOS Request Body
+
+```json
+{
+  "user_id": "victim_demo_user",
+  "lat": 19.0760,
+  "lng": 72.8770,
+  "phone": "+91 9820001234",
+  "contact_ids": ["dispatcher_admin"]
+}
 ```
 
 ---
 
-# Contributors
+## 🤖 ML Pipeline — Safety Score
 
-Hackathon Project
+The safety score (0–100) is predicted by a **RandomForestRegressor** (R² ≈ 0.88) trained on 719 H3 hexagons covering Mumbai.
 
-Feel free to contribute by:
+### Features Used
 
-- Improving feature engineering
-- Improving the scoring methodology
-- Enhancing the ML model
-- Building the frontend
-- Optimizing search and visualization
+| Feature | Type |
+|---------|------|
+| `police_distance` | Distance to nearest police station (m) |
+| `hospital_distance` | Distance to nearest hospital (m) |
+| `railway_distance` | Distance to nearest railway station (m) |
+| `metro_distance` | Distance to nearest metro station (m) |
+| `bus_stop_distance` | Distance to nearest bus stop (m) |
+| `restaurants` | Count of restaurants in hexagon |
+| `parks` | Count of parks in hexagon |
+| `schools` | Count of schools in hexagon |
+| `pharmacies` | Count of pharmacies in hexagon |
+| `crime_count` | Crime incidents in hexagon |
+
+### Score Tiers
+
+| Score | Label |
+|-------|-------|
+| 80–100 | 🟢 Very Safe |
+| 60–79 | 🟢 Safe |
+| 40–59 | 🟡 Moderate |
+| 20–39 | 🔴 Unsafe |
+| 0–19 | 🔴 Very Unsafe |
+
+### Run the ML Pipeline (from scratch)
+
+```bash
+# 1. Generate Mumbai boundary
+python script/create_boundary.py
+
+# 2. Generate H3 hexagons (resolution 8)
+python script/generate_hexagons.py
+
+# 3. Download OpenStreetMap POI data
+python script/download_all.py
+
+# 4. Engineer geospatial features
+python script/run_features.py
+
+# 5. Generate synthetic safety scores
+python script/generate_scores.py
+
+# 6. Train the Random Forest model
+python script/train_model.py
+```
+
+---
+
+## 🔊 Voice SOS — How It Works
+
+```
+Victim triggers SOS
+        │
+        ▼
+POST /sos  →  session created, broadcaster_token + listener_token returned
+        │
+        ├──► Victim connects WS /ws/broadcast?token=...
+        │         └── Streams live 16kHz PCM audio chunks
+        │
+        └──► Responder pastes listener_token
+                  └── Connects WS /ws/listen?token=...
+                            ├── Receives live audio (plays in browser)
+                            └── Sees victim phone number, GPS, alert time
+```
+
+- Audio is streamed as **16-bit PCM little-endian** at **16 kHz**
+- Late-joining listeners receive the last **N buffered audio frames** (ring buffer)
+- Sessions auto-expire after **4 hours** via background cleanup loop
+- Tokens are signed **JWTs** (HS256)
+
+---
+
+## 🗺️ Safest Route
+
+The `/safety/route` endpoint finds two routes between any two Mumbai locations:
+
+- **Safest Route** — minimises walking through high-crime hexagons (weighted by safety score)
+- **Quickest Route** — shortest path regardless of risk
+
+Input accepts either:
+- Plain address strings: `"Andheri Station, Mumbai"`
+- Coordinate strings: `"19.0760, 72.8770"`
+
+The route is displayed on an interactive **Leaflet dark-theme map** in the mobile simulator:
+- 🟢 Green solid line = Safest route
+- 🔵 Blue dashed line = Quickest route
+- Waypoints are reverse-geocoded to real street names
+
+---
+
+## 🧪 Running Tests
+
+```bash
+cd voice-feature
+python -m pytest test/ -v
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Backend | FastAPI + Uvicorn |
+| Real-time | WebSockets (native FastAPI) |
+| Auth | JWT (PyJWT / HS256) |
+| ML Model | scikit-learn RandomForestRegressor |
+| Geospatial | GeoPandas, H3, Shapely |
+| Geocoding | Nominatim (OpenStreetMap) |
+| Map | Leaflet.js (CartoDB dark tiles) |
+| Frontend | Vanilla HTML + CSS + JS |
+| Fonts | Google Fonts (Outfit, Space Grotesk) |
+
+---
+
+## 👥 Contributors
+
+Built for a hackathon — SafeSphere team.
+
+> **Note:** The Women's Safety Score is synthetically generated for demonstration purposes using OSM and crime data proxies. It is not an official safety measure.
