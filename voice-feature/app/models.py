@@ -18,10 +18,12 @@ class SOSRequest(BaseModel):
     contact_ids: list of user IDs the victim registered as emergency contacts
                  at signup. In a production system these would be looked up
                  in a database and push-notified with the listener_token.
+    phone: victim's phone number shown to emergency responders.
     """
     user_id: str
     lat: float
     lng: float
+    phone: Optional[str] = ""
     contact_ids: Optional[List[str]] = []
 
 
@@ -37,6 +39,7 @@ class SOSResponse(BaseModel):
     broadcaster_token: str
     listener_token: str
     user_id: str
+    phone: Optional[str] = ""
     lat: float
     lng: float
     alert_time: str
@@ -51,6 +54,7 @@ class SessionStatusResponse(BaseModel):
     broadcaster_connected: bool       # True if broadcaster WebSocket is open
     created_at: str
     user_id: Optional[str] = None
+    phone: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
 

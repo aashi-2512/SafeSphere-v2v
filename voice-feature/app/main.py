@@ -18,9 +18,11 @@ Exposes:
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
+import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.auth import create_token
 from app.cleanup import session_cleanup_loop
@@ -82,7 +84,15 @@ def root():
         "message": "SafeSphere Emergency Backend is running!",
         "version": "2.0.0",
         "docs": "/docs",
+        "ui": "/ui",
     }
+
+
+@app.get("/ui", tags=["general"])
+def get_ui():
+    """Serve the premium SafeSphere Voice SOS dashboard."""
+    ui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "index.html")
+    return FileResponse(ui_path)
 
 
 @app.get("/health", tags=["general"])
@@ -113,6 +123,7 @@ def trigger_sos(body: SOSRequest):
         user_id=body.user_id,
         lat=body.lat,
         lng=body.lng,
+        phone=body.phone,
     )
 
     broadcaster_token = create_token(session_id=session_id, role="broadcaster")
@@ -120,7 +131,7 @@ def trigger_sos(body: SOSRequest):
     alert_time = datetime.utcnow().isoformat()
 
     logger.info(
-        f"SOS triggered | user={body.user_id} | session={session_id} "
+        f"SOS triggered | user={body.user_id} | phone={body.phone} | session={session_id} "
         f"| location=({body.lat}, {body.lng}) | contacts={body.contact_ids}"
     )
 
@@ -130,6 +141,7 @@ def trigger_sos(body: SOSRequest):
         broadcaster_token=broadcaster_token,
         listener_token=listener_token,
         user_id=body.user_id,
+        phone=body.phone,
         lat=body.lat,
         lng=body.lng,
         alert_time=alert_time,
@@ -154,6 +166,7 @@ def session_status(session_id: str):
         broadcaster_connected=session["broadcaster"] is not None,
         created_at=session["created_at"].isoformat(),
         user_id=session.get("user_id"),
+        phone=session.get("phone", ""),
         lat=session.get("lat"),
         lng=session.get("lng"),
     )

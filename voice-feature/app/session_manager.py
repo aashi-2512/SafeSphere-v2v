@@ -31,12 +31,14 @@ class SessionManager:
         user_id: Optional[str] = None,
         lat: Optional[float] = None,
         lng: Optional[float] = None,
+        phone: Optional[str] = None,
     ) -> str:
         """Create a new emergency session and return its UUID."""
         session_id = str(uuid4())
         self.sessions[session_id] = {
             "created_at": datetime.utcnow(),
             "user_id": user_id,
+            "phone": phone or "",
             "lat": lat,
             "lng": lng,
             "broadcaster": None,
@@ -67,6 +69,7 @@ class SessionManager:
             result.append({
                 "session_id": sid,
                 "user_id": s.get("user_id"),
+                "phone": s.get("phone", ""),
                 "created_at": s["created_at"].isoformat(),
                 "listener_count": len(s["listeners"]),
                 "broadcaster_connected": s.get("broadcaster") is not None,
