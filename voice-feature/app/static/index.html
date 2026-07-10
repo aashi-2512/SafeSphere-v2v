@@ -1408,12 +1408,12 @@ async function fetchRoute() {
         const d = await res.json();
 
         document.getElementById('routeResult').classList.add('visible');
-        document.getElementById('safeRisk').textContent  = 'Risk: ' + (d.safest_route?.risk_index?.toFixed(2)  ?? '—');
-        document.getElementById('quickRisk').textContent = 'Risk: ' + (d.quickest_route?.risk_index?.toFixed(2) ?? '—');
+        document.getElementById('safeRisk').textContent  = 'Risk: ' + (d.safest_route?.mean_risk?.toFixed(2)  ?? '—');
+        document.getElementById('quickRisk').textContent = 'Risk: ' + (d.quickest_route?.mean_risk?.toFixed(2) ?? '—');
 
         // ── Draw Leaflet map ──
-        const safeCoords  = d.safest_route?.coordinates  || [];
-        const quickCoords = d.quickest_route?.coordinates || [];
+        const safeCoords  = d.safest_route?.path_coords  || [];
+        const quickCoords = d.quickest_route?.path_coords || [];
 
         // Convert [lat,lng] arrays to Leaflet LatLng
         const safeLL  = safeCoords.map(([la, ln]) => [la, ln]);
