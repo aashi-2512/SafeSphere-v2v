@@ -1,0 +1,13 @@
+geopandas
+shapely
+pandas
+openpyxl
+folium
+h3
+osmnx
+scikit-learn
+joblib
+geopy
+networkx
+requests
+pytest
