@@ -1,286 +1,228 @@
-# 🛡️ SafeSphere v2 — Women's Safety Platform
+<div align="center">
 
-> A real-time emergency SOS voice relay system combined with a geospatial ML-powered Women's Safety Score for Mumbai — built for a hackathon.
+<img src="assets/logo.png" width="160"/>
 
----
+# 🛡️ SafeSphere
 
-## 📌 What This Project Does
+### AI-Powered Women's Safety Platform
 
-SafeSphere v2 has two integrated layers:
+**Intelligent Safe Routing • AI Safety Intelligence • Real-Time Emergency SOS**
 
-| Layer | Description |
-|-------|-------------|
-| **ML Safety Map** | Predicts a Women's Safety Score (0–100) for any location in Mumbai using a Random Forest model trained on H3 hexagonal geospatial data |
-| **Voice SOS Backend** | Real-time emergency system where a victim triggers an SOS, streams live audio to emergency contacts via WebSocket, and shares their phone number and GPS location with responders |
-| **Mobile App Simulator** | A browser-based side-by-side phone simulator showing the full victim ↔ responder flow |
+<p>
 
----
+![Next.js](https://img.shields.io/badge/Next.js-React-black?logo=next.js)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi)
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript)
+![Machine Learning](https://img.shields.io/badge/ML-Random%20Forest-success)
+![Hackathon](https://img.shields.io/badge/Built%20For-Hackathon-orange)
 
-## 🗂️ Project Structure
+</p>
 
-```
-SafeSphere-v2v/
-│
-├── data/                          # Geospatial datasets
-│   ├── mumbai_boundary.geojson
-│   ├── mumbai_hexagons.geojson
-│   ├── mumbai_ml_dataset.geojson  # Main ML dataset (719 hexagons)
-│   ├── crime.xlsx
-│   ├── police.geojson
-│   ├── hospitals.geojson
-│   ├── railway.geojson
-│   ├── metro.geojson
-│   ├── bus_stops.geojson
-│   ├── restaurants.geojson
-│   ├── parks.geojson
-│   ├── schools.geojson
-│   └── pharmacies.geojson
-│
-├── script/                        # ML pipeline scripts
-│   ├── create_boundary.py
-│   ├── generate_hexagons.py
-│   ├── download_osm.py
-│   ├── download_all.py
-│   ├── add_feature.py
-│   ├── run_features.py
-│   ├── generate_scores.py
-│   ├── train_model.py
-│   └── safe_route.py              # Safest route calculation engine
-│
-├── model.pkl                      # Trained RandomForest model (R² ≈ 0.88)
-├── requirements.txt
-│
-└── voice-feature/                 # FastAPI backend + Mobile UI
-    ├── app/
-    │   ├── main.py                # FastAPI entry point
-    │   ├── models.py              # Pydantic models (SOSRequest, SOSResponse, etc.)
-    │   ├── session_manager.py     # In-memory session store
-    │   ├── websocket.py           # WS broadcaster + listener logic
-    │   ├── safety_api.py          # Safety score + route REST endpoints
-    │   ├── auth.py                # JWT token creation/validation
-    │   ├── cleanup.py             # Session TTL cleanup loop
-    │   ├── config.py              # App configuration
-    │   ├── logger.py              # Structured logger
-    │   └── static/
-    │       └── index.html         # Mobile App Simulator UI
-    ├── test/                      # API + WebSocket integration tests
-    └── requirements.txt
-```
+### **Safer Spaces. Smarter Response.**
+
+</div>
 
 ---
 
-## ⚡ Quick Start — Run the App
+## 🌍 Overview
 
-### 1. Install dependencies
+SafeSphere is a full-stack AI platform that helps users make safer travel decisions and get immediate help in emergencies. Most navigation apps optimize for speed — SafeSphere optimizes for **safety**, combining crime intelligence, infrastructure data, and geospatial ML into one system that runs from prevention through emergency response.
 
-```bash
-# From the voice-feature directory
-cd voice-feature
-pip install -r requirements.txt
-```
+Four components power the platform:
 
-### 2. Start the server
-
-```bash
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 3. Open the Mobile Simulator
-
-```
-http://127.0.0.1:8000/ui
-```
-
-> The API docs (Swagger UI) are available at: `http://127.0.0.1:8000/docs`
+- 🧠 **AI Safety Scores** — ML-predicted safety rating for any location
+- 🗺️ **Intelligent Safe Routing** — routes that weigh real-world risk, not just distance
+- 🚨 **Emergency SOS** — live GPS + voice streaming the moment a user needs help
+- 🖥️ **Responder Dashboard** — real-time situational awareness for emergency personnel
 
 ---
 
-## 📱 Mobile App Simulator
+## ✨ Features
 
-The UI at `/ui` simulates two phones side by side in a browser:
+### 🧠 AI Safety Score
 
-### Phone 1 — Victim / User App
+Search any location in Mumbai for an AI-generated Women's Safety Score (0–100), powered by a **Random Forest Regressor** trained across **719 H3 hexagonal cells** covering the city.
 
-| Tab | Features |
-|-----|----------|
-| 🏠 **Home** | Dashboard with recent victim records (ID, location, timestamp) — no safety scores shown |
-| 🆘 **SOS** | Large circular SOS button, phone number input, voice activation toggle (keyword: *"help"*, *"sos"*, *"emergency"*), mic visualizer, token sheet |
-| 📊 **Safety Score** | Type any location worldwide → geocodes via Nominatim → queries ML model → shows safety score gauge + crime metrics |
-| 🗺️ **Safest Route** | Enter start & end as place names → calls route engine → shows interactive Leaflet map with safe route (green) and quick route (blue dashed) |
+The model learns from:
+Police & hospital proximity • Railway & metro connectivity • Bus stop density • Restaurant, park, school & pharmacy density • Historical crime counts
 
-### Phone 2 — Responder / Emergency App
-
-- Paste the **listener JWT token** generated by the victim's SOS
-- Connects to the live WebSocket stream
-- Displays the **victim's phone number** prominently
-- Shows victim user ID, GPS coordinates, geocoded location pin, and alert time
-- Live audio level meter for incoming mic stream
-- **No safety score metrics** shown on the responder screen
-
----
-
-## 🔌 API Endpoints
-
-### SOS & Session
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/sos` | Trigger SOS → returns broadcaster & listener JWT tokens |
-| `GET` | `/session/{id}/status` | Live session status (listener count, phone, GPS) |
-| `DELETE` | `/session/{id}` | End a session |
-| `GET` | `/sessions` | List all active sessions (admin) |
-
-### Safety Map
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/safety/score?lat=&lng=` | Safety score for a GPS point (0–100) |
-| `POST` | `/safety/route` | Safest + quickest walking route between two Mumbai locations |
-| `GET` | `/safety/hexagons` | Full hexagon GeoJSON for map rendering |
-
-### WebSockets
-
-| Protocol | Endpoint | Description |
-|----------|----------|-------------|
-| `WS` | `/ws/broadcast?token=` | Victim streams live PCM audio |
-| `WS` | `/ws/listen?token=` | Emergency contacts receive live audio |
-
-### SOS Request Body
-
-```json
-{
-  "user_id": "victim_demo_user",
-  "lat": 19.0760,
-  "lng": 72.8770,
-  "phone": "+91 9820001234",
-  "contact_ids": ["dispatcher_admin"]
-}
-```
-
----
-
-## 🤖 ML Pipeline — Safety Score
-
-The safety score (0–100) is predicted by a **RandomForestRegressor** (R² ≈ 0.88) trained on 719 H3 hexagons covering Mumbai.
-
-### Features Used
-
-| Feature | Type |
-|---------|------|
-| `police_distance` | Distance to nearest police station (m) |
-| `hospital_distance` | Distance to nearest hospital (m) |
-| `railway_distance` | Distance to nearest railway station (m) |
-| `metro_distance` | Distance to nearest metro station (m) |
-| `bus_stop_distance` | Distance to nearest bus stop (m) |
-| `restaurants` | Count of restaurants in hexagon |
-| `parks` | Count of parks in hexagon |
-| `schools` | Count of schools in hexagon |
-| `pharmacies` | Count of pharmacies in hexagon |
-| `crime_count` | Crime incidents in hexagon |
-
-### Score Tiers
-
-| Score | Label |
-|-------|-------|
+| Score | Classification |
+|--------|----------------|
 | 80–100 | 🟢 Very Safe |
 | 60–79 | 🟢 Safe |
 | 40–59 | 🟡 Moderate |
 | 20–39 | 🔴 Unsafe |
 | 0–19 | 🔴 Very Unsafe |
 
-### Run the ML Pipeline (from scratch)
+**Pipeline:** OpenStreetMap + crime data → feature engineering → H3 hexagonal grid → Random Forest → normalized safety score per hexagon.
+
+### 🗺️ Intelligent Safe Routing
+
+Instead of just the fastest path, the routing engine evaluates how safe an entire journey is — sampling the route across H3 hexagons and scoring it against **time-of-day risk profiles** (☀️ Day / 🌆 Evening / 🌙 Night), since the same street can carry different risk depending on when you travel it.
+
+**How a route gets built:**
+1. OSRM generates the quickest route between start and destination
+2. The route is sampled across H3 hexagons and scored for risk
+3. Segments exceeding the risk threshold trigger a search of neighboring hexagons (K-ring search) for safer detours
+4. Candidate detours are compared using a weighted cost function:
+
+   ```
+   Route Cost = 0.5 × Mean Risk + 0.3 × Maximum Risk + 2.0 × Unsafe Hex Count
+   ```
+
+   Weighting unsafe hex count heavily prevents a single dangerous hotspot from hiding inside an otherwise-safe average.
+5. The safest viable route within the detour limit is returned
+
+Every response includes **explainable metadata** — mean risk, max risk, unsafe hex count, route cost, distance difference, and iteration history — so routing decisions are transparent, not a black box. If no safer detour exists within the allowed distance, the platform tells the user plainly that the current route is already the safest available, rather than forcing an unnecessary detour.
+
+### 🚨 Emergency SOS
+
+Hold-to-activate SOS that immediately:
+- Creates a secure, JWT-authenticated emergency session
+- Shares live GPS location
+- Streams live microphone audio to responders over WebSockets (low-latency, multi-listener, with automatic session cleanup)
+
+### 🖥️ Emergency Responder Dashboard
+
+Gives responders everything in one view: victim details and phone number, live GPS on an interactive map, active session list, live audio stream and transcript, and real-time session status.
+
+---
+
+## 📸 Application Preview
+
+| | |
+|---|---|
+| **Home** ![](assets/home.png) | **AI Safety Score** ![](assets/safety-map.png) |
+| **Safe Routing** ![](assets/route.png) | **Emergency SOS** ![](assets/sos.png) |
+
+**Emergency Dashboard**
+![](assets/admin-dashboard.png)
+
+---
+
+## 📂 Project Structure
+
+```text
+SafeSphere-v2v/
+│
+├── frontend/          # Next.js application
+│   ├── app/
+│   ├── components/
+│   └── public/
+│
+├── backend/           # FastAPI backend
+│   ├── app/
+│   ├── routes/
+│   ├── websocket/
+│   └── models/
+│
+├── script/            # ML pipeline & routing engine
+│   ├── safe_route.py
+│   ├── train_model.py
+│   ├── generate_scores.py
+│   └── run_features.py
+│
+├── data/               # Geospatial datasets
+├── assets/             # README images
+├── output/             # Generated route maps
+├── cache/
+│
+├── model.pkl
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+**1. Clone the repo**
+```bash
+git clone <your-repository-url>
+cd SafeSphere-v2v
+```
+
+**2. Backend**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+API: `http://127.0.0.1:8000` · Docs: `http://127.0.0.1:8000/docs`
+
+**3. Frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+App: `http://localhost:3000`
+
+---
+
+## 📡 API Endpoints
+
+**Safety**
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/safety/score` | Predict Women's Safety Score |
+| POST | `/safety/route` | Generate safest & quickest routes |
+| GET | `/safety/hexagons` | Retrieve H3 safety map |
+
+**Emergency**
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/sos` | Create emergency session |
+| GET | `/session/{id}` | Session status |
+| DELETE | `/session/{id}` | End emergency session |
+| GET | `/sessions` | List active sessions |
+
+**WebSocket**
+
+| Endpoint | Purpose |
+|-----------|---------|
+| `/ws/broadcast` | Victim broadcasts live audio |
+| `/ws/listen` | Responders receive live audio |
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Tools |
+|---|---|
+| **Frontend** | Next.js, React, TypeScript, Tailwind CSS, Leaflet, Framer Motion |
+| **Backend** | FastAPI, Python, Uvicorn, WebSockets, JWT, Pydantic |
+| **Machine Learning** | Scikit-learn (Random Forest), GeoPandas, H3, Shapely, Pandas, NumPy |
+| **Mapping & Geospatial** | OpenStreetMap, OSRM, Nominatim, Folium, GeoJSON |
+
+---
+
+## 🧪 Testing
+
+Regression and integration tests cover safety score predictions, the safe routing engine, time-based risk evaluation, threshold validation, SOS session creation, WebSocket communication, and emergency session lifecycle.
 
 ```bash
-# 1. Generate Mumbai boundary
-python script/create_boundary.py
-
-# 2. Generate H3 hexagons (resolution 8)
-python script/generate_hexagons.py
-
-# 3. Download OpenStreetMap POI data
-python script/download_all.py
-
-# 4. Engineer geospatial features
-python script/run_features.py
-
-# 5. Generate synthetic safety scores
-python script/generate_scores.py
-
-# 6. Train the Random Forest model
-python script/train_model.py
+pytest
 ```
 
 ---
 
-## 🔊 Voice SOS — How It Works
+## 🔮 Future Enhancements
 
-```
-Victim triggers SOS
-        │
-        ▼
-POST /sos  →  session created, broadcaster_token + listener_token returned
-        │
-        ├──► Victim connects WS /ws/broadcast?token=...
-        │         └── Streams live 16kHz PCM audio chunks
-        │
-        └──► Responder pastes listener_token
-                  └── Connects WS /ws/listen?token=...
-                            ├── Receives live audio (plays in browser)
-                            └── Sees victim phone number, GPS, alert time
-```
-
-- Audio is streamed as **16-bit PCM little-endian** at **16 kHz**
-- Late-joining listeners receive the last **N buffered audio frames** (ring buffer)
-- Sessions auto-expire after **4 hours** via background cleanup loop
-- Tokens are signed **JWTs** (HS256)
-
----
-
-## 🗺️ Safest Route
-
-The `/safety/route` endpoint finds two routes between any two Mumbai locations:
-
-- **Safest Route** — minimises walking through high-crime hexagons (weighted by safety score)
-- **Quickest Route** — shortest path regardless of risk
-
-Input accepts either:
-- Plain address strings: `"Andheri Station, Mumbai"`
-- Coordinate strings: `"19.0760, 72.8770"`
-
-The route is displayed on an interactive **Leaflet dark-theme map** in the mobile simulator:
-- 🟢 Green solid line = Safest route
-- 🔵 Blue dashed line = Quickest route
-- Waypoints are reverse-geocoded to real street names
-
----
-
-## 🧪 Running Tests
-
-```bash
-cd voice-feature
-python -m pytest test/ -v
-```
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Backend | FastAPI + Uvicorn |
-| Real-time | WebSockets (native FastAPI) |
-| Auth | JWT (PyJWT / HS256) |
-| ML Model | scikit-learn RandomForestRegressor |
-| Geospatial | GeoPandas, H3, Shapely |
-| Geocoding | Nominatim (OpenStreetMap) |
-| Map | Leaflet.js (CartoDB dark tiles) |
-| Frontend | Vanilla HTML + CSS + JS |
-| Fonts | Google Fonts (Outfit, Space Grotesk) |
+Multi-city support • Driving & cycling safety profiles • Push notifications • Smartwatch integration • Community incident reporting • Offline emergency mode • Live crime feed integration
 
 ---
 
 ## 👥 Contributors
 
-Built for a hackathon — SafeSphere team.
+Built with ❤️ by the **SafeSphere Team**.
 
-> **Note:** The Women's Safety Score is synthetically generated for demonstration purposes using OSM and crime data proxies. It is not an official safety measure.
+---
+
+## ⚠️ Disclaimer
+
+SafeSphere is a hackathon prototype demonstrating how AI, ML, and geospatial analytics can improve urban safety. Safety scores are generated from historical crime data, public infrastructure, and predictive models — they are for demonstration purposes only and should **not** be treated as official safety ratings or emergency guidance.
+
