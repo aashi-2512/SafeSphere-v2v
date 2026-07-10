@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-
+# Model training script
 def add_nearest_distance(
     hexagon_file,
     feature_file,
