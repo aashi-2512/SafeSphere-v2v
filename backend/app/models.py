@@ -46,6 +46,10 @@ class SOSResponse(BaseModel):
     message: str
 
 
+class TranscriptRequest(BaseModel):
+    transcript: str
+
+
 class SessionStatusResponse(BaseModel):
     """Live status snapshot of an emergency session."""
     session_id: str

@@ -105,6 +105,8 @@ def compute_route_cost(mean_risk, max_risk, unsafe_count):
     return (0.5 * mean_risk) + (0.3 * max_risk) + (2.0 * unsafe_count)
 
 def fetch_road_routes(start_lat, start_lng, end_lat, end_lng, waypoints=None, alternatives=True):
+    if waypoints and len(waypoints) > 0:
+        alternatives = False
     alt_param = "true" if alternatives else "false"
     coords = [f"{start_lng},{start_lat}"]
     if waypoints:
@@ -321,6 +323,7 @@ def safest_route(start_address, end_address, time_bucket=None, data_dir='data'):
         )
         
         improved = False
+        best_candidate = None
         if detour_routes:
             for rt in detour_routes:
                 cost, mean_risk, max_risk, unsafe_count, hrl2 = score_route_by_hex_risk(rt["coords"], time_bucket, static_scores, hex_time_risk_dict)
@@ -333,21 +336,24 @@ def safest_route(start_address, end_address, time_bucket=None, data_dir='data'):
                 scored_routes.append(rt)
                 
                 if cost < current_route["cost_score"] and rt["distance_m"] <= base_dist * MAX_DETOUR_RATIO:
-                    history_entry = {
-                        "iteration": iteration,
-                        "worst_hex": {"id": highest_risk_hex, "risk": max_r},
-                        "detour_hex": {"id": best_neighbor, "risk": n_risk},
-                        "original_cost": current_route["cost_score"],
-                        "candidate_cost": cost,
-                        "original_distance": current_route["distance_m"],
-                        "candidate_distance": rt["distance_m"],
-                        "status": "Accepted"
-                    }
-                    iteration_history.append(history_entry)
-                    current_route = rt
-                    improved = True
-                    waypoints = new_waypoints
-                    break # Take the first route that significantly improves cost
+                    if best_candidate is None or cost < best_candidate["cost_score"]:
+                        best_candidate = rt
+            
+            if best_candidate:
+                history_entry = {
+                    "iteration": iteration,
+                    "worst_hex": {"id": highest_risk_hex, "risk": max_r},
+                    "detour_hex": {"id": best_neighbor, "risk": n_risk},
+                    "original_cost": current_route["cost_score"],
+                    "candidate_cost": best_candidate["cost_score"],
+                    "original_distance": current_route["distance_m"],
+                    "candidate_distance": best_candidate["distance_m"],
+                    "status": "Accepted"
+                }
+                iteration_history.append(history_entry)
+                current_route = best_candidate
+                improved = True
+                waypoints = new_waypoints
                     
         if not improved:
             stop_reason = StopReason.MAX_DETOUR_RATIO if (detour_routes and all(r.get("distance_m", float('inf')) > base_dist * MAX_DETOUR_RATIO for r in detour_routes)) else StopReason.NO_IMPROVEMENT

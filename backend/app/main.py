@@ -32,6 +32,7 @@ from app.models import (
     SessionStatusResponse,
     SOSRequest,
     SOSResponse,
+    TranscriptRequest,
 )
 from app.safety_api import router as safety_router
 from app.session_manager import session_manager
@@ -170,6 +171,18 @@ def session_status(session_id: str):
         lat=session.get("lat"),
         lng=session.get("lng"),
     )
+
+
+@app.patch("/session/{session_id}/transcript", tags=["sos"])
+def update_transcript(session_id: str, body: TranscriptRequest):
+    """Update the voice transcript for an active SOS session."""
+    session = session_manager.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session["transcript"] = body.transcript
+    logger.info(f"Transcript updated for session {session_id}: {body.transcript}")
+    return {"message": "Transcript updated", "transcript": body.transcript}
 
 
 @app.delete("/session/{session_id}", tags=["sos"])

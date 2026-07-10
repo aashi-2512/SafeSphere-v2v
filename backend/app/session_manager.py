@@ -46,6 +46,7 @@ class SessionManager:
             "listeners": set(),
             "ring_buffer": deque(maxlen=RING_BUFFER_SIZE),
             "status": "active",
+            "transcript": "",
         }
         return session_id
 
@@ -77,6 +78,7 @@ class SessionManager:
                 "lat": s.get("lat"),
                 "lng": s.get("lng"),
                 "status": s.get("status", "active"),
+                "transcript": s.get("transcript", ""),
             })
         return result
 

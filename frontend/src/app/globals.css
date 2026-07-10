@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #ECFDF5;
+  --color-primary-100: #D1FAE5;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-900: #064E3B;
+
+  --color-danger-50: #FEF2F2;
+  --color-danger-500: #EF4444;
+  --color-danger-600: #DC2626;
+
+  --color-warning-500: #F59E0B;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: #f3f4f6; /* Outer desktop background */
+    color: #111827;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-danger {
+    animation: pulse-danger 2s infinite;
+  }
+  @keyframes pulse-danger {
+    0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  }
+}
